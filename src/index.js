@@ -59,13 +59,21 @@ async function translate(text, options) {
 
     // Append query string to the request URL.
     let url = `${baseUrl}?${querystring.stringify(data)}`;
+    let api_key = options.api_key;
+    let country_code = options.country_code;
+    let proxy_base_url = options.proxy_base_url;
+    let proxy_url = proxy_base_url + '/?api_key=' + api_key + '&country_code=' + country_code + '&render=false';
+
+    if (!proxy_base_url || !api_key) {
+      throw new Error('Please provide configuration data');
+    }
 
     let requestOptions;
     // If request URL is greater than 2048 characters, use POST method.
     if (url.length > 2048) {
       delete data.q;
       requestOptions = [
-        `${baseUrl}?${querystring.stringify(data)}`,
+        `${proxy_url}&url=${baseUrl}?${querystring.stringify(data)}`,
         {
           method: 'POST',
           form: true,
@@ -76,8 +84,10 @@ async function translate(text, options) {
       ];
     }
     else {
-      requestOptions = [ url ];
+      requestOptions = [ proxy_url + '&url=' + url ];
     }
+
+    //console.log(requestOptions);
 
     // Request translation from Google Translate.
     let response = await got(...requestOptions);
